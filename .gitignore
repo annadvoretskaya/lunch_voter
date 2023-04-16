@@ -1,0 +1,25 @@
+.idea/
+
+# Created by https://www.gitignore.io/api/macos,linux,django,python,pycharm
+
+### Django ###
+*.log
+*.pot
+*.pyc
+__pycache__/
+db.sqlite3
+media
+
+# celery beat schedule file
+celerybeat-schedule
+
+### Python ###
+# Byte-compiled / optimized / DLL files
+*.py[cod]
+*$py.class
+
+# virtualenv
+.venv
+venv/
+ENV/
+
