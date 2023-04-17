@@ -28,20 +28,21 @@ def determine_today_winner():
             restaurants_ids=Window(
                 expression=ArrayAgg('restaurant_id'),
                 partition_by=['score_sum', 'users_count'],
-                order_by=['-score_sum', 'users_count']
+                order_by=['-score_sum', '-users_count']
             )
         )\
         .values('score_sum', 'users_count', 'restaurants_ids')\
-        .order_by('-score_sum', 'users_count')\
+        .order_by('-score_sum', '-users_count')\
         .first()
 
-    winner_results = (
-        WinnerRestaurant(
-            restaurant_id=rest_id,
-            score=vote_results['score_sum'],
-            unique_voters=vote_results['users_count']
+    if vote_results:
+        winner_results = (
+            WinnerRestaurant(
+                restaurant_id=rest_id,
+                score=vote_results['score_sum'],
+                unique_voters=vote_results['users_count']
+            )
+            for rest_id in vote_results['restaurants_ids']
         )
-        for rest_id in vote_results['restaurants_ids']
-    )
 
-    WinnerRestaurant.objects.bulk_create(winner_results)
+        WinnerRestaurant.objects.bulk_create(winner_results)

@@ -7,12 +7,13 @@ from django.db.models import Sum
 
 class Restaurant(models.Model):
     name = models.CharField(max_length=128)
-    description = models.CharField(max_length=256, null=True, blank=True)
+    description = models.CharField(max_length=255, null=True, blank=True)
     link = models.URLField(null=True, blank=True)
+    created = models.DateTimeField(auto_now_add=True)
 
 
 class VoteManager(models.Manager):
-    def votes_per_day(self, user_id, date=None):
+    def votes_per_day(self, user_id: int, date: datetime.date = None) -> int:
         if not date:
             date = datetime.date.today()
         return self.filter(user_id=user_id, date=date).aggregate(votes_amount=Sum('amount'))['votes_amount']
@@ -26,6 +27,9 @@ class Vote(models.Model):
     date = models.DateField(auto_now_add=True, db_index=True)
 
     objects = VoteManager()
+
+    class Meta:
+        unique_together = (('user', 'restaurant', 'date'), )
 
 
 class WinnerRestaurant(models.Model):

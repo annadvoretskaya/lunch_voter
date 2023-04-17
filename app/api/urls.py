@@ -15,7 +15,7 @@ votes_router.register(r'votes', views.VotesViewSet, basename='votes')
 urlpatterns = [
     path('', include(router.urls)),
     path('', include(votes_router.urls)),
-    path('winners/', views.WinnersListView.as_view()),
+    path('winners/', views.WinnersListView.as_view(), name='winners-list'),
     path('register/', views.RegisterView.as_view()),
     path('login/', views.LoginView.as_view()),
     path('logout/', knox.views.LogoutView.as_view())

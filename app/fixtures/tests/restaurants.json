@@ -1,0 +1,32 @@
+[
+  {
+    "model": "base.restaurant",
+    "pk": 1,
+    "fields": {
+      "name": "Pizza Hut",
+      "description": "The best pizza in town",
+      "link": "http://www.pizzahut.com",
+      "created": "2022-04-15T12:00:00Z"
+    }
+  },
+  {
+    "model": "base.restaurant",
+    "pk": 2,
+    "fields": {
+      "name": "Burger Lab",
+      "description": "Satisfy your cravings with our burgers",
+      "link": "http://www.burgerlab.com",
+      "created": "2022-04-15T13:00:00Z"
+    }
+  },
+  {
+    "model": "base.restaurant",
+    "pk": 3,
+    "fields": {
+      "name": "Sushi House",
+      "description": "Fresh and delicious sushi",
+      "link": "http://www.sushihouse.com",
+      "created": "2022-04-15T14:00:00Z"
+    }
+  }
+]

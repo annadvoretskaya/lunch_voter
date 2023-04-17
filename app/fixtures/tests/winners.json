@@ -1,0 +1,42 @@
+[
+  {
+    "model": "base.winnerrestaurant",
+    "pk": 1,
+    "fields": {
+      "restaurant": 1,
+      "date": "2023-04-14",
+      "score": 10.0,
+      "unique_voters": 5
+    }
+  },
+  {
+    "model": "base.winnerrestaurant",
+    "pk": 2,
+    "fields": {
+      "restaurant": 2,
+      "date": "2023-04-15",
+      "score": 8.0,
+      "unique_voters": 3
+    }
+  },
+  {
+    "model": "base.winnerrestaurant",
+    "pk": 3,
+    "fields": {
+      "restaurant": 3,
+      "date": "2023-04-16",
+      "score": 7.5,
+      "unique_voters": 4
+    }
+  },
+  {
+    "model": "base.winnerrestaurant",
+    "pk": 4,
+    "fields": {
+      "restaurant": 2,
+      "date": "2023-04-16",
+      "score": 17.5,
+      "unique_voters": 5
+    }
+  }
+]

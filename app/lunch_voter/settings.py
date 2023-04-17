@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 import os
 from pathlib import Path
+import constance
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -20,7 +21,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get('SECRET_KEY')
+SECRET_KEY = os.environ.get('SECRET_KEY', 'secret')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = int(os.environ.get('DEBUG', default=0))
@@ -37,6 +38,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'constance',
+    'constance.backends.database',
     'celery',
     'rest_framework',
     'knox',
@@ -144,3 +147,16 @@ REST_KNOX = {
 
 CELERY_BROKER_URL = os.environ.get("CELERY_BROKER", "redis://127.0.0.1:6379/0")
 CELERY_RESULT_BACKEND = os.environ.get("CELERY_BACKEND", "redis://127.0.0.1:6379/0")
+
+CONSTANCE_BACKEND = 'constance.backends.database.DatabaseBackend'
+
+
+CONSTANCE_ADDITIONAL_FIELDS = {
+    'list_int_field': ['base.fields.IntegerListField', {}],
+}
+
+
+CONSTANCE_CONFIG = {
+    'MAX_VOTES_PER_DAY': (5, 'Max votes per user per day'),
+    'VOTES_WEIGHTS': ([1, 0.5, 0.25], 'Votes weights', 'list_int_field')
+}
