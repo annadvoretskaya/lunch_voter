@@ -11,6 +11,18 @@ services:
     depends_on:
       - db
       - redis
+
+  celery_worker:
+    build: ./app
+    command: celery -A lunch_voter worker -l INFO
+    volumes:
+      - ./app/:/usr/src/app/
+    env_file:
+      - ./.env.dev
+    depends_on:
+      - redis
+      - db
+
   celery_beat:
     build: ./app
     command: sh -c "rm -f './celerybeat.pid' && celery -A lunch_voter beat -l INFO"

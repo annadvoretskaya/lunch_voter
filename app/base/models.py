@@ -6,8 +6,8 @@ from django.db.models import Sum
 
 
 class Restaurant(models.Model):
-    name = models.CharField(max_length=128)
-    description = models.CharField(max_length=255, null=True, blank=True)
+    name = models.CharField(max_length=128, unique=True)
+    description = models.TextField(null=True, blank=True)
     link = models.URLField(null=True, blank=True)
     created = models.DateTimeField(auto_now_add=True)
 

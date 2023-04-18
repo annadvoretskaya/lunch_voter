@@ -59,6 +59,8 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'lunch_voter.urls'
 
+APPEND_SLASH = False
+
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -92,6 +94,14 @@ DATABASES = {
         'PORT': os.environ.get('SQL_PORT', '5432'),
     }
 
+}
+
+
+CACHES = {
+    'default': {
+        'BACKEND': os.environ.get('DJANGO_CACHE_BACKEND', 'django.core.cache.backends.locmem.LocMemCache'),
+        'LOCATION': os.environ.get('DJANGO_CACHE_LOCATION', 'default-cache'),
+    }
 }
 
 
@@ -149,13 +159,10 @@ CELERY_BROKER_URL = os.environ.get("CELERY_BROKER", "redis://127.0.0.1:6379/0")
 CELERY_RESULT_BACKEND = os.environ.get("CELERY_BACKEND", "redis://127.0.0.1:6379/0")
 
 CONSTANCE_BACKEND = 'constance.backends.database.DatabaseBackend'
-
-
+CONSTANCE_DATABASE_CACHE_BACKEND = 'default'
 CONSTANCE_ADDITIONAL_FIELDS = {
     'list_int_field': ['base.fields.IntegerListField', {}],
 }
-
-
 CONSTANCE_CONFIG = {
     'MAX_VOTES_PER_DAY': (5, 'Max votes per user per day'),
     'VOTES_WEIGHTS': ([1, 0.5, 0.25], 'Votes weights', 'list_int_field')

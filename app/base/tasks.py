@@ -5,13 +5,14 @@ from django.contrib.postgres.aggregates import ArrayAgg
 from django.db.models import Count, Sum, Window
 
 from lunch_voter.celery import app
+from base import constants
 from base.models import Vote, WinnerRestaurant
 
 
 @app.on_after_finalize.connect
 def setup_periodic_tasks(sender, **kwargs):
     sender.add_periodic_task(
-        crontab(minute=0, hour=11),
+        crontab(minute=0, hour=constants.LUNCH_HOUR),
         determine_today_winner.s()
     )
 

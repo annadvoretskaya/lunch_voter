@@ -27,7 +27,7 @@ class RegisterView(GenericAPIView):
 
 
 class LoginView(GenericAPIView):
-    permission_classes = (permissions.AllowAny, )
+    permission_classes = [permissions.AllowAny, ]
     serializer_class = AuthTokenSerializer
 
     def post(self, request, *args, **kwargs):
@@ -73,6 +73,7 @@ class VotesViewSet(GenericViewSet):
 
 
 class WinnersListView(ListAPIView):
+    permission_classes = [permissions.AllowAny, ]
     serializer_class = WinnerRestaurantSerializer
     queryset = WinnerRestaurant.objects.all()
 
