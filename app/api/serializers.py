@@ -1,5 +1,6 @@
 from django.contrib.auth.models import User
 from rest_framework import serializers
+from knox.settings import knox_settings
 
 from base.models import Restaurant, WinnerRestaurant
 
@@ -18,6 +19,10 @@ class RegisterUserSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         user = User.objects.create_user(**validated_data)
         return user
+
+
+class AuthResponseSerializer(serializers.Serializer):
+    token = serializers.CharField(max_length=knox_settings.AUTH_TOKEN_CHARACTER_LENGTH)
 
 
 class RestaurantSerializer(serializers.ModelSerializer):

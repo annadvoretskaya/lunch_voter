@@ -1,1 +1,0 @@
-LUNCH_HOUR = 11

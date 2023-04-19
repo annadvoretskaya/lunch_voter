@@ -1,6 +1,9 @@
 import datetime
 
 from constance import config
+from django.utils.decorators import method_decorator
+from drf_yasg import openapi
+from drf_yasg.utils import swagger_auto_schema
 from knox.models import AuthToken
 from rest_framework import status, permissions
 from rest_framework.authtoken.serializers import AuthTokenSerializer
@@ -10,34 +13,49 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, GenericViewSet
 
 from api.utils import determine_vote_weight
-from base import constants
 from base.models import Restaurant, Vote, WinnerRestaurant
-from api.serializers import RegisterUserSerializer, RestaurantSerializer, WinnerRestaurantSerializer
+from api.serializers import (AuthResponseSerializer, RegisterUserSerializer,
+                             RestaurantSerializer, WinnerRestaurantSerializer)
 
 
 class RegisterView(GenericAPIView):
     serializer_class = RegisterUserSerializer
 
+    @swagger_auto_schema(
+        security=[],
+        responses={
+            status.HTTP_201_CREATED: AuthResponseSerializer,
+            status.HTTP_400_BAD_REQUEST: 'Not all required fields were provided',
+        }
+    )
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
         _, auth_token = AuthToken.objects.create(user)
-        return Response({"token": auth_token}, status=status.HTTP_201_CREATED)
+        return Response(AuthResponseSerializer({"token": auth_token}).data, status=status.HTTP_201_CREATED)
 
 
 class LoginView(GenericAPIView):
     permission_classes = [permissions.AllowAny, ]
     serializer_class = AuthTokenSerializer
 
+    @swagger_auto_schema(
+        security=[],
+        responses={
+            status.HTTP_201_CREATED: AuthResponseSerializer,
+            status.HTTP_400_BAD_REQUEST: 'Not all required fields were provided or credentials are invalid',
+        }
+    )
     def post(self, request, *args, **kwargs):
         serializer = AuthTokenSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data['user']
         _, auth_token = AuthToken.objects.create(user)
-        return Response({"token": auth_token}, status=status.HTTP_200_OK)
+        return Response(AuthResponseSerializer({"token": auth_token}).data, status=status.HTTP_200_OK)
 
 
+@method_decorator(name='list', decorator=swagger_auto_schema(security=[]))
 class RestaurantsViewSet(ModelViewSet):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly, ]
     queryset = Restaurant.objects.all()
@@ -47,16 +65,27 @@ class RestaurantsViewSet(ModelViewSet):
 class VotesViewSet(GenericViewSet):
     permission_classes = [permissions.IsAuthenticated, ]
 
-    def create(self, request, *args, **kwargs):
-        if constants.LUNCH_HOUR and datetime.datetime.now().hour >= constants.LUNCH_HOUR:
-            return Response(status=status.HTTP_422_UNPROCESSABLE_ENTITY)
+    def get_serializer(self, *args, **kwargs):
+        return
 
+    @swagger_auto_schema(
+        responses={
+            status.HTTP_400_BAD_REQUEST: 'Max votes per day exceeded',
+            status.HTTP_404_NOT_FOUND: 'Restaurant was not found'
+        },
+        operation_description='Left the vote for the restaurant',
+        manual_parameters=[openapi.Parameter("restaurant_pk",
+                                             openapi.IN_PATH,
+                                             description="Restaurant id",
+                                             type=openapi.TYPE_INTEGER
+                                             )]
+    )
+    def create(self, request, *args, **kwargs):
         restaurant = get_object_or_404(Restaurant, pk=kwargs.get('restaurant_pk'))
 
         user_vote, created = Vote.objects.get_or_create(
             user=request.user,
             restaurant=restaurant,
-            date=datetime.date.today(),
             defaults={'score': config.VOTES_WEIGHTS[0], 'amount': 1}
         )
 
@@ -72,6 +101,20 @@ class VotesViewSet(GenericViewSet):
         return Response(data={}, status=status.HTTP_201_CREATED)
 
 
+@method_decorator(name='get', decorator=swagger_auto_schema(
+    security=[],
+    operation_description='Get the list of the winning restaurants by date '
+                          'passed as "date" query parameter.'
+                          'If "date" was not provided winners of the previous day will be returned by default',
+    responses={
+        status.HTTP_400_BAD_REQUEST: 'Invalid date format'
+    },
+    manual_parameters=[openapi.Parameter("date",
+                                         openapi.IN_QUERY,
+                                         description="Date in format %Y-%m-%d",
+                                         type=openapi.TYPE_STRING
+                                         )]
+))
 class WinnersListView(ListAPIView):
     permission_classes = [permissions.AllowAny, ]
     serializer_class = WinnerRestaurantSerializer
@@ -80,7 +123,7 @@ class WinnersListView(ListAPIView):
     def filter_queryset(self, queryset):
         filter_date = self.request.query_params.get('date')
         if not filter_date:
-            filter_date = datetime.date.today()
+            filter_date = datetime.date.today() - datetime.timedelta(days=1)
         else:
             try:
                 filter_date = datetime.datetime.strptime(filter_date, '%Y-%m-%d')

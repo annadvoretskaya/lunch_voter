@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'drf_yasg',
     'constance',
     'constance.backends.database',
     'celery',
@@ -166,4 +167,14 @@ CONSTANCE_ADDITIONAL_FIELDS = {
 CONSTANCE_CONFIG = {
     'MAX_VOTES_PER_DAY': (5, 'Max votes per user per day'),
     'VOTES_WEIGHTS': ([1, 0.5, 0.25], 'Votes weights', 'list_int_field')
+}
+
+SWAGGER_SETTINGS = {
+   'SECURITY_DEFINITIONS': {
+      'Bearer': {
+            'type': 'apiKey',
+            'name': 'Authorization',
+            'in': 'header'
+      }
+   }
 }

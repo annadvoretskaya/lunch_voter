@@ -5,21 +5,20 @@ from django.contrib.postgres.aggregates import ArrayAgg
 from django.db.models import Count, Sum, Window
 
 from lunch_voter.celery import app
-from base import constants
 from base.models import Vote, WinnerRestaurant
 
 
 @app.on_after_finalize.connect
 def setup_periodic_tasks(sender, **kwargs):
     sender.add_periodic_task(
-        crontab(minute=0, hour=constants.LUNCH_HOUR),
-        determine_today_winner.s()
+        crontab(minute=0, hour=0),
+        determine_winner.s()
     )
 
 
 @app.task
-def determine_today_winner():
-    date = datetime.date.today()
+def determine_winner():
+    date = datetime.date.today() - datetime.timedelta(days=1)
 
     vote_results = Vote.objects.filter(date=date)\
         .values('restaurant_id')\

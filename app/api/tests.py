@@ -1,4 +1,5 @@
 import datetime
+from unittest import mock
 
 from constance.test import override_config
 from django.contrib.auth.models import User
@@ -6,10 +7,8 @@ from knox.models import AuthToken
 from rest_framework import status
 from rest_framework.reverse import reverse
 from rest_framework.test import APITestCase
-from unittest import mock
 
 from api.serializers import WinnerRestaurantSerializer
-from base import constants
 from base.models import Restaurant, Vote, WinnerRestaurant
 
 
@@ -135,10 +134,7 @@ class VotesViewSetTestCase(APITestCase):
         cls.user = User.objects.first()
         cls.restaurants = Restaurant.objects.all()
 
-    @mock.patch('api.views.datetime', wraps=datetime)
-    def test_create_vote(self, mock_datetime):
-        vote_hour = constants.LUNCH_HOUR - 1
-        mock_datetime.datetime.now.return_value = datetime.datetime.now().replace(hour=vote_hour)
+    def test_create_vote(self):
         url = reverse('votes-list', args=[self.restaurants[1].id])
         self.client.force_authenticate(user=self.user)
         response = self.client.post(url)
@@ -146,29 +142,8 @@ class VotesViewSetTestCase(APITestCase):
         self.assertEqual(Vote.objects.count(), 1)
         self.assertEqual(Vote.objects.first().score, 1)
 
-    @mock.patch('base.constants.LUNCH_HOUR', 0)
-    def test_create_vote_all_day(self):
-        url = reverse('votes-list', args=[self.restaurants[1].id])
-        self.client.force_authenticate(user=self.user)
-        response = self.client.post(url)
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(Vote.objects.count(), 1)
-        self.assertEqual(Vote.objects.first().score, 1)
-
-    @mock.patch('api.views.datetime', wraps=datetime)
-    def test_create_vote_too_late(self, mock_datetime):
-        vote_hour = constants.LUNCH_HOUR + 1
-        mock_datetime.datetime.now.return_value = datetime.datetime.now().replace(hour=vote_hour)
-        url = reverse('votes-list', args=[self.restaurants[1].id])
-        self.client.force_authenticate(user=self.user)
-        response = self.client.post(url)
-        self.assertEqual(response.status_code, status.HTTP_422_UNPROCESSABLE_ENTITY)
-
-    @mock.patch('api.views.datetime', wraps=datetime)
     @override_config(MAX_VOTES_PER_DAY=4)
-    def test_create_multiple_votes_same_restaurant(self, mock_datetime):
-        vote_hour = constants.LUNCH_HOUR - 1
-        mock_datetime.datetime.now.return_value = datetime.datetime.now().replace(hour=vote_hour)
+    def test_create_multiple_votes_same_restaurant(self):
 
         date = datetime.date.today()
         url = reverse('votes-list', args=[self.restaurants[1].id])
@@ -201,12 +176,8 @@ class VotesViewSetTestCase(APITestCase):
         response = self.client.post(url)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
-    @mock.patch('api.views.datetime', wraps=datetime)
     @override_config(VOTES_WEIGHTS=[2.0, 1.5])
-    def test_create_vote_another_votes_weights(self, mock_datetime):
-        vote_hour = constants.LUNCH_HOUR - 1
-        mock_datetime.datetime.now.return_value = datetime.datetime.now().replace(hour=vote_hour)
-
+    def test_create_vote_another_votes_weights(self):
         date = datetime.date.today()
         url = reverse('votes-list', args=[self.restaurants[1].id])
         self.client.force_authenticate(user=self.user)
@@ -223,12 +194,8 @@ class VotesViewSetTestCase(APITestCase):
         self.assertEqual(vote.score, 3.5)
         self.assertEqual(vote.amount, 2)
 
-    @mock.patch('api.views.datetime', wraps=datetime)
     @override_config(MAX_VOTES_PER_DAY=2)
-    def test_create_vote_different_restaurants(self, mock_datetime):
-        vote_hour = constants.LUNCH_HOUR - 1
-        mock_datetime.datetime.now.return_value = datetime.datetime.now().replace(hour=vote_hour)
-
+    def test_create_vote_different_restaurants(self):
         date = datetime.date.today()
         url_1 = reverse('votes-list', args=[self.restaurants[0].id])
         url_2 = reverse('votes-list', args=[self.restaurants[1].id])
@@ -254,10 +221,7 @@ class VotesViewSetTestCase(APITestCase):
         response = self.client.post(url, {}, format='json')
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
-    @mock.patch('api.views.datetime', wraps=datetime)
-    def test_create_vote_invalid_restaurant(self, mock_datetime):
-        vote_hour = constants.LUNCH_HOUR - 1
-        mock_datetime.datetime.now.return_value = datetime.datetime.now().replace(hour=vote_hour)
+    def test_create_vote_invalid_restaurant(self):
         self.client.force_authenticate(user=self.user)
         url = reverse('votes-list', kwargs={'restaurant_pk': 999})
         response = self.client.post(url, {}, format='json')
@@ -278,11 +242,14 @@ class WinnersListViewTestCase(APITestCase):
 
     def test_get_winners(self):
         url = reverse('winners-list')
-        response = self.client.get(url)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 1)
-        serialized_winner = WinnerRestaurantSerializer(self.winner)
-        self.assertEqual(response.data[0], serialized_winner.data)
+
+        with mock.patch('api.views.datetime', wraps=datetime) as mock_datetime:
+            mock_datetime.date.today.return_value = datetime.date.today() + datetime.timedelta(days=1)
+            response = self.client.get(url)
+            self.assertEqual(response.status_code, status.HTTP_200_OK)
+            self.assertEqual(len(response.data), 1)
+            serialized_winner = WinnerRestaurantSerializer(self.winner)
+            self.assertEqual(response.data[0], serialized_winner.data)
 
     def test_filter_by_date(self):
         url = f"{reverse('winners-list')}?date={self.winner.date}"
